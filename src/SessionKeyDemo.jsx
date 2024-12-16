@@ -8,8 +8,8 @@ const SessionKeyDemo = () => {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [status, setStatus] = useState('');
 
-  const SESSION_KEY_RPC = 'https://dev-testnet.ten.xyz/v1/join/';
-  const GATEWAY_RPC = 'https://dev-testnet.ten.xyz/v1/?token=6CD0EAEEAEF8A818220DE239121D174C417BF00A';  // For sending transactions
+  const SESSION_RPC = 'https://uat-testnet.ten.xyz/v1/join/';
+  const GATEWAY_RPC = 'https://uat-testnet.ten.xyz/v1/?token=c866f259b62f38f9d6a495cf76510b0de030a44d';
 
   const MSG_ID = 1;
 
@@ -31,7 +31,7 @@ const SessionKeyDemo = () => {
 
   const createSessionKey = async () => {
     try {
-      const response = await fetch(SESSION_KEY_RPC, {
+      const response = await fetch(GATEWAY_RPC, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -42,17 +42,14 @@ const SessionKeyDemo = () => {
         })
       });
       
-      // Get raw response first
       const rawResponse = await response.text();
       console.log("Raw create response:", rawResponse);
   
-      // If it's a plain session key (not JSON), use it directly
-      if (rawResponse && rawResponse.length === 40) { // Typical Ethereum address length without 0x
+      if (rawResponse && rawResponse.length === 40) {
         const sessionKeyAddress = '0x' + rawResponse;
         setSessionKey(sessionKeyAddress);
         setStatus('Session key created: ' + sessionKeyAddress);
       } else {
-        // Try parsing as JSON in case endpoint format changes
         try {
           const data = JSON.parse(rawResponse);
           if (data.result) {
@@ -71,10 +68,9 @@ const SessionKeyDemo = () => {
   };
 
   const activateSessionKey = async () => {
-    /*
     
     try {
-      const response = await fetch(SESSION_KEY_RPC, {
+      const response = await fetch(GATEWAY_RPC, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,9 +95,10 @@ const SessionKeyDemo = () => {
       setStatus('Error activating session key: ' + error.message);
       setIsSessionActive(false);
     }
-    */
+    
+   /*
         try {
-          const response = await fetch(SESSION_KEY_RPC, {
+          const response = await fetch(GATEWAY_RPC, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -126,11 +123,12 @@ const SessionKeyDemo = () => {
           setStatus('Error activating session key: ' + error.message);
           setIsSessionActive(false);
         }
+        */
   };  
 
   const deactivateSessionKey = async () => {
     try {
-      const response = await fetch(SESSION_KEY_RPC, {
+      const response = await fetch(GATEWAY_RPC, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -163,11 +161,19 @@ const SessionKeyDemo = () => {
       }
   
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+      
+      // Check chain ID first
+      const network = await provider.getNetwork();
+      console.log("Current network:", network); // Debug log
+  
       const signer = provider.getSigner();
   
+      // Include chainId and explicit gasLimit in the transaction
       const tx = await signer.sendTransaction({
         to: sessionKey,
         value: ethers.utils.parseEther("0.1"),
+        chainId: network.chainId,
+        gasLimit: 21000
       });
   
       setStatus('Funding transaction sent, waiting for confirmation...');
